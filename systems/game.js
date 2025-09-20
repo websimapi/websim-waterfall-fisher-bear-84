@@ -235,9 +235,14 @@ function setupStartScreen() {
                     showcaseBear.position.y = baseY + Math.abs(Math.sin(phase)) * 0.12;
                 })
                 .onComplete(() => { 
-                    showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY; 
-                    // face the user (camera) on the start screen
-                    showcaseBear.rotation.y = 0; 
+                    showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY;
+                    const turnDur = 700;
+                    new TWEEN.Tween(showcaseBear.rotation).to({ y: 0 }, turnDur).easing(TWEEN.Easing.Cubic.InOut).start();
+                    const wob = { t: 0 };
+                    new TWEEN.Tween(wob).to({ t: 1 }, turnDur).easing(TWEEN.Easing.Sine.InOut)
+                        .onUpdate(()=>{ const ph = wob.t * Math.PI * 3; showcaseBear.rotation.z = Math.sin(ph)*0.12; showcaseBear.position.y = baseY + Math.abs(Math.sin(ph))*0.08; })
+                        .onComplete(()=>{ showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY; })
+                        .start();
                 })
                 .start();
         }
