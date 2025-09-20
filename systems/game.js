@@ -143,24 +143,24 @@ function setupShowcaseAnimation() {
     const arm = showcaseBear.getObjectByName('rightArm');
     if (arm?.rotation) new TWEEN.Tween(arm.rotation).to({ x: -0.35 }, 900).easing(easingInOut).yoyo(true).repeat(Infinity).start();
     if (showcaseFish) {
-        // lock fish at hand; animate only tail + body segments for a held wiggle
         const wiggle = { t: 0 };
         new TWEEN.Tween(wiggle)
           .to({ t: Math.PI * 2 }, 1200)
           .easing(easingInOut)
           .onUpdate(() => {
+              if (!showcaseFish) return; // guard
               const ud = showcaseFish.userData || {};
               const phase = wiggle.t;
-              const tailSwing = Math.sin(phase) * 0.14; // gentler showcase wiggle, reduced to avoid clipping
+              const tailSwing = Math.sin(phase) * 0.14;
               if (ud.tailV) ud.tailV.rotation.y = tailSwing;
               if (ud.tailH) ud.tailH.rotation.y = tailSwing;
-               if (ud.segments) {
-                   for (const s of ud.segments) {
-                       const ramp = Math.min(1, Math.max(0, (s.phase - 0.55) / 0.4)); // tail-biased wiggle
-                       const amp = (ud.wiggleRotAmp ? ud.wiggleRotAmp * 0.45 : 0.14) * ramp;
-                       s.mesh.rotation.y = (s.baseRotY || 0) + Math.sin(phase + s.phase * Math.PI) * amp;
-                   }
-               }
+              if (ud.segments) {
+                  for (const s of ud.segments) {
+                      const ramp = Math.min(1, Math.max(0, (s.phase - 0.55) / 0.4));
+                      const amp = (ud.wiggleRotAmp ? ud.wiggleRotAmp * 0.45 : 0.14) * ramp;
+                      s.mesh.rotation.y = (s.baseRotY || 0) + Math.sin(phase + s.phase * Math.PI) * amp;
+                  }
+              }
           })
           .repeat(Infinity)
           .yoyo(true)
@@ -228,22 +228,22 @@ function setupStartScreen() {
                 .to({ x: endX }, duration)
                 .easing(TWEEN.Easing.Quadratic.Out)
                 .onUpdate(() => {
-                    if (!showcaseBear) return;
+                    const sb = showcaseBear; if (!sb) return;
                     const total = Math.max(0.0001, Math.abs(startX - endX));
-                    const progress = 1 - (Math.abs(showcaseBear.position.x - endX) / total);
-                    const phase = progress * Math.PI * 6; // ~3 full waddles
-                    showcaseBear.rotation.z = Math.sin(phase) * 0.18 * (fromRight ? -1 : 1);
-                    showcaseBear.position.y = baseY + Math.abs(Math.sin(phase)) * 0.12;
+                    const progress = 1 - (Math.abs(sb.position.x - endX) / total);
+                    const phase = progress * Math.PI * 6;
+                    sb.rotation.z = Math.sin(phase) * 0.18 * (fromRight ? -1 : 1);
+                    sb.position.y = baseY + Math.abs(Math.sin(phase)) * 0.12;
                 })
                 .onComplete(() => { 
-                    if (!showcaseBear) return;
-                    showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY;
+                    const sb = showcaseBear; if (!sb) return;
+                    sb.rotation.z = 0; sb.position.y = baseY;
                     const turnDur = 700;
-                    new TWEEN.Tween(showcaseBear.rotation).to({ y: 0 }, turnDur).easing(TWEEN.Easing.Cubic.InOut).start();
+                    new TWEEN.Tween(sb.rotation).to({ y: 0 }, turnDur).easing(TWEEN.Easing.Cubic.InOut).start();
                     const wob = { t: 0 };
                     new TWEEN.Tween(wob).to({ t: 1 }, turnDur).easing(TWEEN.Easing.Sine.InOut)
-                        .onUpdate(()=>{ if(!showcaseBear) return; const ph = wob.t * Math.PI * 3; showcaseBear.rotation.z = Math.sin(ph)*0.12; showcaseBear.position.y = baseY + Math.abs(Math.sin(ph))*0.08; })
-                        .onComplete(()=>{ if(!showcaseBear) return; showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY; })
+                        .onUpdate(()=>{ const sbb = showcaseBear; if(!sbb) return; const ph = wob.t * Math.PI * 3; sbb.rotation.z = Math.sin(ph)*0.12; sbb.position.y = baseY + Math.abs(Math.sin(ph))*0.08; })
+                        .onComplete(()=>{ const sbb = showcaseBear; if(!sbb) return; sbb.rotation.z = 0; sbb.position.y = baseY; })
                         .start();
                 })
                 .start();
@@ -285,7 +285,6 @@ function startGame() {
 function startGameWithTurnaround() {
     if (__startingSequence) return;
     __startingSequence = true;
-    // If we have a showcase bear visible, rotate it from facing camera (y=0) to river (y=PI) with a waddle
     if (showcaseBear && showcaseBear.visible) {
         const baseY = 4.65;
         const dur = 900;
@@ -297,16 +296,14 @@ function startGameWithTurnaround() {
             .to({ t: 1 }, dur)
             .easing(easeWob)
             .onUpdate(()=>{
-                if (!showcaseBear) return;
+                const sb = showcaseBear; if (!sb) return;
                 const phase = wob.t * Math.PI * 4;
-                showcaseBear.rotation.z = Math.sin(phase) * 0.15;
-                showcaseBear.position.y = baseY + Math.abs(Math.sin(phase)) * 0.10;
+                sb.rotation.z = Math.sin(phase) * 0.15;
+                sb.position.y = baseY + Math.abs(Math.sin(phase)) * 0.10;
             })
             .onComplete(()=>{
-                if (!showcaseBear) { __startingSequence = false; startGame(); return; }
-                showcaseBear.rotation.z = 0;
-                showcaseBear.position.y = baseY;
-                // proceed to gameplay
+                const sb = showcaseBear;
+                if (sb) { sb.rotation.z = 0; sb.position.y = baseY; }
                 startGame();
                 __startingSequence = false;
             })
