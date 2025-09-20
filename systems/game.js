@@ -228,6 +228,7 @@ function setupStartScreen() {
                 .to({ x: endX }, duration)
                 .easing(TWEEN.Easing.Quadratic.Out)
                 .onUpdate(() => {
+                    if (!showcaseBear) return;
                     const total = Math.max(0.0001, Math.abs(startX - endX));
                     const progress = 1 - (Math.abs(showcaseBear.position.x - endX) / total);
                     const phase = progress * Math.PI * 6; // ~3 full waddles
@@ -235,13 +236,14 @@ function setupStartScreen() {
                     showcaseBear.position.y = baseY + Math.abs(Math.sin(phase)) * 0.12;
                 })
                 .onComplete(() => { 
+                    if (!showcaseBear) return;
                     showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY;
                     const turnDur = 700;
                     new TWEEN.Tween(showcaseBear.rotation).to({ y: 0 }, turnDur).easing(TWEEN.Easing.Cubic.InOut).start();
                     const wob = { t: 0 };
                     new TWEEN.Tween(wob).to({ t: 1 }, turnDur).easing(TWEEN.Easing.Sine.InOut)
-                        .onUpdate(()=>{ const ph = wob.t * Math.PI * 3; showcaseBear.rotation.z = Math.sin(ph)*0.12; showcaseBear.position.y = baseY + Math.abs(Math.sin(ph))*0.08; })
-                        .onComplete(()=>{ showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY; })
+                        .onUpdate(()=>{ if(!showcaseBear) return; const ph = wob.t * Math.PI * 3; showcaseBear.rotation.z = Math.sin(ph)*0.12; showcaseBear.position.y = baseY + Math.abs(Math.sin(ph))*0.08; })
+                        .onComplete(()=>{ if(!showcaseBear) return; showcaseBear.rotation.z = 0; showcaseBear.position.y = baseY; })
                         .start();
                 })
                 .start();
@@ -295,11 +297,13 @@ function startGameWithTurnaround() {
             .to({ t: 1 }, dur)
             .easing(easeWob)
             .onUpdate(()=>{
+                if (!showcaseBear) return;
                 const phase = wob.t * Math.PI * 4;
                 showcaseBear.rotation.z = Math.sin(phase) * 0.15;
                 showcaseBear.position.y = baseY + Math.abs(Math.sin(phase)) * 0.10;
             })
             .onComplete(()=>{
+                if (!showcaseBear) { __startingSequence = false; startGame(); return; }
                 showcaseBear.rotation.z = 0;
                 showcaseBear.position.y = baseY;
                 // proceed to gameplay
