@@ -31,6 +31,8 @@ const CAM_OFFSET = new THREE.Vector3(0, 12, 9);
 const CAM_LERP = 0.08;
 /* add start guard */
 let __startingSequence = false;
+/* track previous bear Z for camera/log movement */
+let lastBearZ = 0;
 
 /**
  * [FIX] Technical Note: The 'missing arm' bug on retry was due to improper
