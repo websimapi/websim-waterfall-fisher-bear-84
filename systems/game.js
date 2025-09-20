@@ -26,10 +26,11 @@ const gravity = new THREE.Vector3(0, -0.05, 0);
 let isFirstLoad = true;
 /* gentle forward drift strength */
 const Z_DRIFT_PER_TICK = 0.0008;
-let lastBearZ = 0;
 /* camera follow config */
 const CAM_OFFSET = new THREE.Vector3(0, 12, 9);
 const CAM_LERP = 0.08;
+/* add start guard */
+let __startingSequence = false;
 
 /**
  * [FIX] Technical Note: The 'missing arm' bug on retry was due to improper
@@ -272,6 +273,39 @@ function startGame() {
     resetSpawner();
 }
 
+function startGameWithTurnaround() {
+    if (__startingSequence) return;
+    __startingSequence = true;
+    // If we have a showcase bear visible, rotate it from facing camera (y=0) to river (y=PI) with a waddle
+    if (showcaseBear && showcaseBear.visible) {
+        const baseY = 4.65;
+        const dur = 900;
+        const easeRot = TWEEN.Easing?.Cubic?.InOut || ((k)=>k);
+        const easeWob = TWEEN.Easing?.Sine?.InOut || ((k)=>k);
+        new TWEEN.Tween(showcaseBear.rotation).to({ y: Math.PI }, dur).easing(easeRot).start();
+        const wob = { t: 0 };
+        new TWEEN.Tween(wob)
+            .to({ t: 1 }, dur)
+            .easing(easeWob)
+            .onUpdate(()=>{
+                const phase = wob.t * Math.PI * 4;
+                showcaseBear.rotation.z = Math.sin(phase) * 0.15;
+                showcaseBear.position.y = baseY + Math.abs(Math.sin(phase)) * 0.10;
+            })
+            .onComplete(()=>{
+                showcaseBear.rotation.z = 0;
+                showcaseBear.position.y = baseY;
+                // proceed to gameplay
+                startGame();
+                __startingSequence = false;
+            })
+            .start();
+    } else {
+        startGame();
+        __startingSequence = false;
+    }
+}
+
 function gameOver() {
     gameState.current = 'GAME_OVER';
     document.getElementById('final-score').innerText = gameState.score;
@@ -352,7 +386,8 @@ function animateLogReset(done) {
 
 export function initGame() {
     setupStartScreen();
-    startButton.addEventListener('click', startGame);
+    // start with turnaround sequence before gameplay
+    startButton.addEventListener('click', startGameWithTurnaround);
     wireAudioUnlock(() => { initAudio(); import('./audio.js').then(m=>m.startWaterfall?.()); });
 }
 
